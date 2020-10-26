@@ -1,0 +1,27 @@
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: Provider
+metadata:
+  name: provider-pizza
+spec:
+  package: "grantgumina/provider-pizza:master"
+  customer:
+    firstName: Foo
+    lastName: Bar
+    email: test@example.com
+  address:
+    street: 123 Foo
+    city: Seattle
+    region: WA
+    postalCode: "98102"
+    phone: "5555555555"
+  pizzas:
+    - size: large
+      toppings:
+        - sausage
+        - pineapple
+    - size: large
+      toppings:
+        - mushroom
+        - spinach
+  paymentSecret:
+    name: payment-secret
