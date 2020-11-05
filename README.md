@@ -12,7 +12,7 @@ NAME            ORDER STATUS   PRICE   STORE ADDRESS                            
 example-order   Bad            3.29    2320 B North 45th Street Seattle, WA 98103    Sarah     2m48s
 ```
 
-![Demo gif](demo-gif.gif)
+![Demo gif](demo.gif)
 
 ## Limitations
 Credit card payments aren't yet working. I'll be adding support soon. You'll store credit card details as a K8s secret and specify `Type: CreditCard` in the secret. See `examples/secret-example.yaml` for details.
