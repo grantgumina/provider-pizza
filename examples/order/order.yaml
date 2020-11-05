@@ -1,0 +1,31 @@
+apiVersion: order.provider-pizza.crossplane.io/v1alpha1
+kind: Order
+metadata:
+  name: example-order
+spec:
+  forProvider:
+    placeOrder: true
+    address:
+      street: "123 Your Street Unit 1"
+      city: "City"
+      region: "WA"
+      postalCode: "98999"
+      phone: "2064567890"
+    customer:
+      firstName: "John"
+      lastName: "Doe"
+      email: "john@example.com"
+    serviceMethod: "Carryout" # Options: Delivery
+    paymentMethod: "Cash" # Options: CreditCard, Test, Cash
+    products:
+      # You can only order 14" cheese pizzas, bottles of coke, and 2 liters of coke for now
+      # -
+      #   name: "Cheese Pizza"
+      # -
+      #   name: "2L Coke"
+      -
+        name: "Bottle of Coke"
+  providerConfigRef:
+    name: example
+  # providerSecret:
+  #   name: payment-secret
