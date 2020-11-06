@@ -1,6 +1,10 @@
 # 🍕 provider-pizza
 I was disappointed to learn [Crossplane](https://crossplane.io) doesn't support my favorite flavor of the cloud - pizza. So I had to build a Domino's Pizza provider to make the cloud-native community's universal cloud API complete.
 
+## Requirements
+* Crossplane v0.14+
+* Crossplane CLI v0.14+
+
 ## Usage
 First, we need to configure the provider:
 ```
