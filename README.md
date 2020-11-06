@@ -2,6 +2,11 @@
 I was disappointed to learn [Crossplane](https://crossplane.io) doesn't support my favorite flavor of the cloud - pizza. So I had to build a Domino's Pizza provider to make the cloud-native community's universal cloud API complete.
 
 ## Usage
+First, we need to configure the provider:
+```
+kubectl apply -f examples/provider/pizza-config.yaml
+```
+
 To create an order:
 ```
 kubectl apply -f examples/order/order.yaml

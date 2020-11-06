@@ -19,8 +19,8 @@ spec:
       name: payment-secret
       key: payment-secret-key
 
+# # credentials.json is base64 encoded and contains the following data
 # {
-#   credentials: BASE64ENCODED_PROVIDER_CREDS,
 #   Type: "CreditCard",
 #   CardType: "Visa",
 #   Number: "1111222233334444",
