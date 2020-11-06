@@ -15,9 +15,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/grantgumina/provider-pizza/apis/order/v1alpha1"
 
+	pz "github.com/grantgumina/pizza-go/pkg/pizza"
 	apisv1alpha1 "github.com/grantgumina/provider-pizza/apis/v1alpha1"
 	"github.com/pkg/errors"
-	pz "github.com/rudoi/pizza-go/pkg/pizza"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -111,33 +111,42 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	// These fmt statements should be removed in the real implementation.
 	fmt.Printf("Observing: %+v", cr)
 
-	// Look at order yaml to see if we should check to see if this is a test or not
-
-	realOrder := cr.Spec.ForProvider.PaymentMethod
-
 	// TODO check if this is actually ordered... the issue is when the order is first created, the tracking URL doesn't resolve so this errors out. Should just gracefully do nothing instead of returning an error.
 
-	if realOrder == "Test" {
-		cr.Status.AtProvider.ManagerName = "TEST: John Doe"
-		cr.Status.AtProvider.OrderStage = "TEST: Routing Station"
-		cr.Status.AtProvider.Store.Phone = "TEST: 2068675309"
-	} else if realOrder != "Test" && cr.Status.AtProvider.Placed {
-		trackingURL, err := c.pizzaClient.GetTrackingUrl(cr.Spec.ForProvider.Address.Phone)
+	current := cr.Spec.ForProvider.DeepCopy()
 
-		if err == nil {
-			trackerStatus, err := c.pizzaClient.Track(trackingURL)
+	// Check if the order has been placed. If not, you need to place it.
+	if cr.Status.AtProvider.Placed {
+		if current.PaymentMethod == "Test" {
+			cr.Status.AtProvider.ManagerName = "TEST: John Doe"
+			cr.Status.AtProvider.OrderStage = "TEST: Routing Station"
+			cr.Status.AtProvider.Store.Phone = "TEST: 2068675309"
 
-			if err != nil {
-				return managed.ExternalObservation{}, errors.New("Could not get tracking information on this order")
+		} else if current.PaymentMethod != "Test" {
+
+			trackingURL, err := c.pizzaClient.GetTrackingUrl(current.Address.Phone)
+
+			if err == nil {
+				trackerStatus, err := c.pizzaClient.Track(trackingURL)
+
+				if err != nil {
+					return managed.ExternalObservation{}, errors.New("Could not get tracking information on this order")
+				}
+
+				fmt.Println("<><>OrderStatus<<><>")
+				fmt.Println(trackerStatus.OrderStatus)
+
+				cr.Status.AtProvider.ManagerName = trackerStatus.ManagerName
+				cr.Status.AtProvider.OrderStage = trackerStatus.OrderStatus
+				cr.Status.AtProvider.Store.Phone = trackerStatus.Phone
 			}
-
-			fmt.Println("<><>OrderStatus<<><>")
-			fmt.Println(trackerStatus.OrderStatus)
-
-			cr.Status.AtProvider.ManagerName = trackerStatus.ManagerName
-			cr.Status.AtProvider.OrderStage = trackerStatus.OrderStatus
-			cr.Status.AtProvider.Store.Phone = trackerStatus.Phone
 		}
+
+		return managed.ExternalObservation{
+			ResourceExists:    true,
+			ResourceUpToDate:  true,
+			ConnectionDetails: managed.ConnectionDetails{},
+		}, nil
 
 	}
 
@@ -165,6 +174,9 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New("errNotMyType")
 	}
 
+	cr.Status.SetConditions(runtimev1alpha1.Creating())
+
+	fmt.Println("\n\n<> <> <> CREATING ORDER <> <> <>\n\n ")
 	fmt.Printf("Creating: %+v", cr)
 
 	// Create the object from the user's YAML
@@ -225,7 +237,6 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New("Order not valid")
 	}
 
-	cr.Status.SetConditions(runtimev1alpha1.Creating())
 	cr.Status.AtProvider.Price = strconv.FormatFloat(price, 'f', 2, 64)
 
 	// Place the order
@@ -252,11 +263,12 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		fmt.Println(returnedOrder.Status)
 		fmt.Println(returnedOrder)
 
-		cr.Status.AtProvider.Placed = true
-
 	case "CreditCard":
 		// TODO need to support paying with credit cards
 	}
+
+	cr.Status.AtProvider.Placed = true
+
 	return managed.ExternalCreation{
 		// Optionally return any details that may be required to connect to the
 		// external resource. These will be stored as the connection secret.
@@ -286,6 +298,9 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New("Could not delete order")
 	}
+
+	// This is a hack to make the order delete. I feel like I'm writing verilog again.
+	cr.Status.AtProvider.Placed = false
 
 	fmt.Printf("Deleting: %+v", cr)
 	cr.Status.SetConditions(runtimev1alpha1.Deleting())

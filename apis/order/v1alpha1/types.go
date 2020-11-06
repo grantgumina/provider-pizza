@@ -76,7 +76,6 @@ type OrderParameters struct {
 	ServiceMethod string    `json:"serviceMethod,omitempty"`
 	PaymentMethod string    `json:"paymentMethod,omitempty"`
 	Products      []Product `json:"products"`
-	// PaymentSecret runtimev1alpha1.ProviderCredentials `json:"paymentSecret,omitempty"`
 }
 
 // OrderSpec defines the desired state of an Order
