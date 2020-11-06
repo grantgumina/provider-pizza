@@ -137,21 +137,6 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.Status.AtProvider.Store.Phone = "2068675309"
 	}
 
-	pc := &apisv1alpha1.ProviderConfig{}
-	ref := pc.Spec.Credentials.SecretRef
-
-	fmt.Println("<><>CREDS<><>")
-	fmt.Println(pc.Spec.Credentials)
-
-	if ref == nil {
-		return managed.ExternalObservation{}, errors.New("No secret ref found")
-	}
-
-	s := &v1.Secret{}
-
-	fmt.Println("<>SECRET<>")
-	fmt.Println(s.Data[ref.Key])
-
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
 		// the managed resource reconciler know that it needs to call Create to
@@ -243,6 +228,9 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	// Place the order
 	paymentMethod := cr.Spec.ForProvider.PaymentMethod
+
+	fmt.Println("<><> METHOD <><>")
+	fmt.Println(paymentMethod)
 
 	switch paymentMethod {
 	case "Test":

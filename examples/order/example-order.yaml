@@ -16,7 +16,7 @@ spec:
       lastName: "Doe"
       email: "john@example.com"
     serviceMethod: "Carryout" # Options: Delivery
-    paymentMethod: "Test" # Options: CreditCard, Test, Cash
+    paymentMethod: "Cash" # Options: CreditCard, Test, Cash
     products:
       # You can only order 14" cheese pizzas, bottles of coke, and 2 liters of coke for now
       # -
