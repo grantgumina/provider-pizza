@@ -115,26 +115,30 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	realOrder := cr.Spec.ForProvider.PaymentMethod
 
-	if realOrder != "Test" {
+	// TODO check if this is actually ordered... the issue is when the order is first created, the tracking URL doesn't resolve so this errors out. Should just gracefully do nothing instead of returning an error.
+
+	if realOrder == "Test" {
+		cr.Status.AtProvider.ManagerName = "TEST: John Doe"
+		cr.Status.AtProvider.OrderStage = "TEST: Routing Station"
+		cr.Status.AtProvider.Store.Phone = "TEST: 2068675309"
+	} else if realOrder != "Test" && cr.Status.AtProvider.Placed {
 		trackingURL, err := c.pizzaClient.GetTrackingUrl(cr.Spec.ForProvider.Address.Phone)
 
-		if err != nil {
-			return managed.ExternalObservation{}, errors.New("Could not get tracking URL on this order")
+		if err == nil {
+			trackerStatus, err := c.pizzaClient.Track(trackingURL)
+
+			if err != nil {
+				return managed.ExternalObservation{}, errors.New("Could not get tracking information on this order")
+			}
+
+			fmt.Println("<><>OrderStatus<<><>")
+			fmt.Println(trackerStatus.OrderStatus)
+
+			cr.Status.AtProvider.ManagerName = trackerStatus.ManagerName
+			cr.Status.AtProvider.OrderStage = trackerStatus.OrderStatus
+			cr.Status.AtProvider.Store.Phone = trackerStatus.Phone
 		}
 
-		trackerStatus, err := c.pizzaClient.Track(trackingURL)
-
-		if err != nil {
-			return managed.ExternalObservation{}, errors.New("Could not get tracking information on this order")
-		}
-
-		cr.Status.AtProvider.ManagerName = trackerStatus.ManagerName
-		cr.Status.AtProvider.OrderStage = trackerStatus.OrderStatus
-		cr.Status.AtProvider.Store.Phone = trackerStatus.Phone
-	} else {
-		cr.Status.AtProvider.ManagerName = "John Doe"
-		cr.Status.AtProvider.OrderStage = "Routing Station"
-		cr.Status.AtProvider.Store.Phone = "2068675309"
 	}
 
 	return managed.ExternalObservation{
@@ -212,8 +216,6 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	order.ServiceMethod = cr.Spec.ForProvider.ServiceMethod
 
-	// For some reason the order isn't valid!!!!!
-
 	// Get order price
 	price, err := c.pizzaClient.ValidateOrder(order)
 
@@ -229,9 +231,6 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	// Place the order
 	paymentMethod := cr.Spec.ForProvider.PaymentMethod
 
-	fmt.Println("<><> METHOD <><>")
-	fmt.Println(paymentMethod)
-
 	switch paymentMethod {
 	case "Test":
 	case "Cash":
@@ -241,42 +240,23 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 		order.Payments = append(order.Payments, payment)
 
-		fmt.Println("CASH IS KING")
+		// Look at order yaml to see if we should place an order or not...
+		returnedOrder, err := c.pizzaClient.PlaceOrder(order)
+
+		if err != nil {
+			return managed.ExternalCreation{}, errors.New("Order couldn't be placed")
+		}
+
+		fmt.Println("<>RETURNED ORDER<>")
+		fmt.Println(returnedOrder.OrderID)
+		fmt.Println(returnedOrder.Status)
+		fmt.Println(returnedOrder)
+
+		cr.Status.AtProvider.Placed = true
+
 	case "CreditCard":
-		// pc := &apisv1alpha1.ProviderConfig{}
-
-		// if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.GetProviderConfigReference().Name}, pc); err != nil {
-		// 	return nil, errors.Wrap(err, errGetPC)
-		// }
-
-		// ref := pc.Spec.Credentials.SecretRef
-
-		// if ref == nil {
-		// 	return managed.ExternalCreation{}, errors.New("No secret ref found")
-		// }
-
-		// s := &v1.Secret{}
-
-		// fmt.Println(s.Data[ref.Key])
-
-		// Read the secrets
-
-		// paymentSecret := cr.Spec.ForProvider.PaymentSecret
-		// if paymentSecret == nil {
-		// 	return managed.ExternalCreation{}, errors.New(errNoSecretRef)
-		// }
-
+		// TODO need to support paying with credit cards
 	}
-
-	// Look at order yaml to see if we should place an order or not...
-	returnedOrder, err := c.pizzaClient.PlaceOrder(order)
-
-	if err != nil {
-		return managed.ExternalCreation{}, errors.New("Order couldn't be placed")
-	}
-
-	fmt.Println(returnedOrder)
-
 	return managed.ExternalCreation{
 		// Optionally return any details that may be required to connect to the
 		// external resource. These will be stored as the connection secret.

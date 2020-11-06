@@ -63,6 +63,7 @@ type OrderObservation struct {
 	ManagerName     string      `json:"managerName,omitempty"`
 	Price           string      `json:"price,omitempty"`
 	OrderStage      string      `json:"orderStage,omitempty"`
+	Placed          bool        `json:"placed,omitempty"`
 }
 
 // OrderParameters are the configurable fields of a Order.
@@ -95,6 +96,7 @@ type OrderStatus struct {
 // Order manipulates the Domino's API
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="ORDER STATUS",type="string",JSONPath=".status.atProvider.orderStage"
+// +kubebuilder:printcolumn:name="PLACED",type="string",JSONPath=".status.atProvider.placed"
 // +kubebuilder:printcolumn:name="PRICE",type="string",JSONPath=".status.atProvider.price"
 // +kubebuilder:printcolumn:name="STORE ADDRESS",type="string",JSONPath=".status.atProvider.store.address"
 // +kubebuilder:printcolumn:name="STORE PHONE",type="string",JSONPath=".status.atProvider.store.phone"

@@ -10,7 +10,7 @@ spec:
       city: "City"
       region: "WA"
       postalCode: "98103"
-      phone: "5555555555"
+      phone: "6168675309"
     customer:
       firstName: "John"
       lastName: "Doe"

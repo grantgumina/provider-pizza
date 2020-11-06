@@ -12,6 +12,9 @@ spec:
   - JSONPath: .status.atProvider.orderStage
     name: ORDER STATUS
     type: string
+  - JSONPath: .status.atProvider.placed
+    name: PLACED
+    type: string
   - JSONPath: .status.atProvider.price
     name: PRICE
     type: string
@@ -168,6 +171,8 @@ spec:
                   type: string
                 orderStage:
                   type: string
+                placed:
+                  type: boolean
                 price:
                   type: string
                 store:
